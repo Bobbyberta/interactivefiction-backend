@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Dungeon Master</title>
+    <style>
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+        #story-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #2a2a2a;
+            border-radius: 5px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .dm-message {
+            background-color: #3a3a3a;
+        }
+
+        .player-message {
+            background-color: #4a4a4a;
+        }
+
+        #input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #player-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #444;
+            background-color: #2a2a2a;
+            color: #ffffff;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Dungeon Master</h1>
+    <div id="story-container"></div>
+    <div id="input-container">
+        <input type="text" id="player-input" placeholder="What do you do?">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const storyContainer = document.getElementById('story-container');
+        const playerInput = document.getElementById('player-input');
+        const sendButton = document.querySelector('button');
+
+        // Initial DM message
+        fetch('/api/story', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({input: 'start game'})
+        })
+        .then(response => response.json())
+        .then(data => {
+            updateStory(data.history);
+        });
+
+        function sendMessage() {
+            const input = playerInput.value.trim();
+            if (!input) return;
+
+            // Disable input and show loading state
+            playerInput.disabled = true;
+            sendButton.disabled = true;
+            sendButton.textContent = 'Thinking...';
+
+            // Add player message to UI
+            addMessage(input, 'player');
+            playerInput.value = '';
+
+            // Send to backend
+            fetch('/api/story', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({input: input})
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage(data.response, 'dm');
+                storyContainer.scrollTop = storyContainer.scrollHeight;
+            })
+            .finally(() => {
+                // Re-enable input
+                playerInput.disabled = false;
+                sendButton.disabled = false;
+                sendButton.textContent = 'Send';
+                playerInput.focus();
+            });
+        }
+
+        function addMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = `${type === 'dm' ? 'DM' : 'Player'}: ${text}`;
+            storyContainer.appendChild(messageDiv);
+        }
+
+        function updateStory(history) {
+            storyContainer.innerHTML = '';
+            history.forEach((message, index) => {
+                addMessage(message, index % 2 === 0 ? 'player' : 'dm');
+            });
+            storyContainer.scrollTop = storyContainer.scrollHeight;
+        }
+
+        // Handle Enter key
+        playerInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html> 
