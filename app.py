@@ -16,12 +16,25 @@ HF_TOKEN = os.environ.get('HUGGINGFACE_TOKEN')  # Get this from Hugging Face
 hf_client = InferenceClient(token=HF_TOKEN) if HF_TOKEN else None
 
 app = Flask(__name__)
-# Configure CORS
-CORS(app, 
-     origins=["https://bobbyberta.github.io", "http://localhost:8000"],
-     allow_headers=["Content-Type", "Authorization"],
-     methods=["GET", "POST", "OPTIONS"],
-     supports_credentials=True)
+# Simple CORS configuration
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "https://bobbyberta.github.io",
+            "http://localhost:8000",
+            "https://bobbyberta.github.io/interactivefiction-frontend/docs"
+        ],
+        "methods": ["POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'https://bobbyberta.github.io')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'POST')
+    return response
 
 def generate_story_response(player_input):
     try:
@@ -54,6 +67,18 @@ Response:"""
 def index():
     return render_template('index.html')
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    # Add more debug info
+    debug_info = {
+        "status": "ok",
+        "environment": "production" if IS_PRODUCTION else "development",
+        "huggingface_configured": hf_client is not None,
+        "python_version": os.sys.version,
+        "cors_origins": app.config.get('CORS_ORIGINS', [])
+    }
+    return jsonify(debug_info)
+
 @app.route('/api/story', methods=['POST'])
 def story():
     print("Received request:", request.json)
@@ -79,6 +104,16 @@ def story():
     return jsonify({
         'response': ai_response,
         'history': []
+    })
+
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({
+        "message": "Interactive Fiction API is running",
+        "endpoints": {
+            "health": "/health",
+            "story": "/api/story"
+        }
     })
 
 if __name__ == '__main__':
