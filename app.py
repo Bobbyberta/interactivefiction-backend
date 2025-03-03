@@ -24,7 +24,7 @@ CORS(app, resources={
             "http://localhost:8000",
             "https://bobbyberta.github.io/interactivefiction-frontend/docs"
         ],
-        "methods": ["POST", "OPTIONS"],
+        "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"]
     }
 })
@@ -33,7 +33,7 @@ CORS(app, resources={
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', 'https://bobbyberta.github.io')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'POST')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     return response
 
 def generate_story_response(player_input):
@@ -62,10 +62,6 @@ Response:"""
         if "rate limit" in str(e).lower():
             return "Server is busy. Please try again in a moment."
         return "Too slow. Try: 'look', 'fight', or 'run'"
-
-@app.route('/')
-def index():
-    return render_template('index.html')
 
 @app.route('/health', methods=['GET'])
 def health_check():
