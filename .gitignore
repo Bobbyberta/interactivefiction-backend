@@ -9,6 +9,10 @@ venv/
 .venv
 env/
 
+# IDE
+.vscode/
+.idea/
+
 # Flask
 instance/
 .webassets-cache

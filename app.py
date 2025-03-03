@@ -2,11 +2,30 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import requests
 import os
+from dotenv import load_dotenv
+from huggingface_hub import InferenceClient
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Environment configuration
+IS_PRODUCTION = os.environ.get('RENDER', False)
+HF_TOKEN = os.environ.get('HUGGINGFACE_TOKEN')  # Get this from Hugging Face
+
+# Initialize Hugging Face client
+hf_client = InferenceClient(token=HF_TOKEN) if HF_TOKEN else None
 
 app = Flask(__name__)
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:*", "file:///*", "null"],
+        "origins": [
+            "http://localhost:*",
+            "file:///*", 
+            "null",
+            "https://bobbyberta.github.io",
+            "https://bobbyberta.github.io/interactivefiction-frontend",
+            "https://bobbyberta.github.io/interactivefiction-frontend/docs"
+        ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"]
     }
@@ -14,45 +33,30 @@ CORS(app, resources={
 
 def generate_story_response(player_input):
     try:
+        print(f"🤖 Generating response for: {player_input}")
+        
         # Ultra-minimal prompt for maximum speed
         prompt = f"""System: You are a fantasy RPG DM. Give very short responses (10-15 words).
 Player: {player_input}
 Response:"""
 
-        response = requests.post('http://localhost:11434/api/generate',
-                               json={
-                                   "model": "mistral",
-                                   "prompt": prompt,
-                                   "stream": False,
-                                   "options": {
-                                       "temperature": 0.5,     # Lower temperature for faster, more focused responses
-                                       "top_k": 40,           # Limit token selection
-                                       "top_p": 0.5,          # More focused sampling
-                                       "num_predict": 20,      # Limit response length
-                                       "stop": ["Player:", "Response:", "\n"],
-                                       "num_ctx": 256,        # Much smaller context window
-                                       "num_thread": 6,       # Increase threads
-                                       "num_gpu": 1,          # Enable GPU if available
-                                       "seed": 42,            # Fixed seed for faster initialization
-                                       "repeat_penalty": 1.1  # Prevent repetition
-                                   }
-                               },
-                               timeout=10)
+        response = hf_client.text_generation(
+            prompt,
+            model="HuggingFaceH4/zephyr-7b-beta",  # Free, good quality model
+            max_new_tokens=30,
+            temperature=0.7,
+            stop_sequences=["Player:", "Response:", "\n"]
+        )
         
-        if response.status_code == 200:
-            resp = response.json()['response'].strip()
-            # Ensure response isn't too long
-            return ' '.join(resp.split()[:15])
-        else:
-            print(f"Error status code: {response.status_code}")
-            return "Error. Try again."
+        print(f"✅ Generated response: {response}")
+        # Ensure response isn't too long
+        return ' '.join(response.split()[:15])
             
-    except requests.exceptions.Timeout:
-        print("Request timed out")
-        return "Too slow. Try: 'look', 'fight', or 'run'"
     except Exception as e:
-        print(f"Error: {str(e)}")
-        return "Error. Try a simpler command."
+        print(f"❌ Error generating response: {str(e)}")
+        if "rate limit" in str(e).lower():
+            return "Server is busy. Please try again in a moment."
+        return "Too slow. Try: 'look', 'fight', or 'run'"
 
 @app.route('/')
 def index():
