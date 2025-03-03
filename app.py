@@ -16,28 +16,29 @@ HF_TOKEN = os.environ.get('HUGGINGFACE_TOKEN')  # Get this from Hugging Face
 hf_client = InferenceClient(token=HF_TOKEN) if HF_TOKEN else None
 
 app = Flask(__name__)
-# Simple CORS configuration
-CORS(app, resources={
-    r"/*": {
-        "origins": [
-            "https://bobbyberta.github.io",
-            "http://localhost:8000",
-            "https://bobbyberta.github.io/interactivefiction-frontend/docs"
-        ],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    }
-})
+# Enable CORS for all routes
+CORS(app)
 
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'https://bobbyberta.github.io')
+    response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     return response
 
-# Root endpoint
-@app.route('/', methods=['GET'])
+# Define routes before any other functions
+@app.route('/health')  # Note: removed methods=['GET'] to allow all methods
+def health_check():
+    debug_info = {
+        "status": "ok",
+        "environment": "production" if IS_PRODUCTION else "development",
+        "huggingface_configured": hf_client is not None,
+        "python_version": os.sys.version,
+        "cors_origins": ["*"]
+    }
+    return jsonify(debug_info)
+
+@app.route('/')
 def root():
     return jsonify({
         "message": "Interactive Fiction API is running",
@@ -46,18 +47,6 @@ def root():
             "story": "/api/story"
         }
     })
-
-# Health check endpoint
-@app.route('/health', methods=['GET'])
-def health_check():
-    debug_info = {
-        "status": "ok",
-        "environment": "production" if IS_PRODUCTION else "development",
-        "huggingface_configured": hf_client is not None,
-        "python_version": os.sys.version,
-        "cors_origins": app.config.get('CORS_ORIGINS', [])
-    }
-    return jsonify(debug_info)
 
 def generate_story_response(player_input):
     try:
