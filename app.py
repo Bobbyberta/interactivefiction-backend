@@ -16,20 +16,12 @@ HF_TOKEN = os.environ.get('HUGGINGFACE_TOKEN')  # Get this from Hugging Face
 hf_client = InferenceClient(token=HF_TOKEN) if HF_TOKEN else None
 
 app = Flask(__name__)
-CORS(app, resources={
-    r"/*": {
-        "origins": [
-            "http://localhost:*",
-            "file:///*", 
-            "null",
-            "https://bobbyberta.github.io",
-            "https://bobbyberta.github.io/interactivefiction-frontend",
-            "https://bobbyberta.github.io/interactivefiction-frontend/docs"
-        ],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    }
-})
+# Configure CORS
+CORS(app, 
+     origins=["https://bobbyberta.github.io", "http://localhost:8000"],
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "OPTIONS"],
+     supports_credentials=True)
 
 def generate_story_response(player_input):
     try:
