@@ -36,6 +36,29 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     return response
 
+# Root endpoint
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({
+        "message": "Interactive Fiction API is running",
+        "endpoints": {
+            "health": "/health",
+            "story": "/api/story"
+        }
+    })
+
+# Health check endpoint
+@app.route('/health', methods=['GET'])
+def health_check():
+    debug_info = {
+        "status": "ok",
+        "environment": "production" if IS_PRODUCTION else "development",
+        "huggingface_configured": hf_client is not None,
+        "python_version": os.sys.version,
+        "cors_origins": app.config.get('CORS_ORIGINS', [])
+    }
+    return jsonify(debug_info)
+
 def generate_story_response(player_input):
     try:
         print(f"🤖 Generating response for: {player_input}")
@@ -63,18 +86,6 @@ Response:"""
             return "Server is busy. Please try again in a moment."
         return "Too slow. Try: 'look', 'fight', or 'run'"
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    # Add more debug info
-    debug_info = {
-        "status": "ok",
-        "environment": "production" if IS_PRODUCTION else "development",
-        "huggingface_configured": hf_client is not None,
-        "python_version": os.sys.version,
-        "cors_origins": app.config.get('CORS_ORIGINS', [])
-    }
-    return jsonify(debug_info)
-
 @app.route('/api/story', methods=['POST'])
 def story():
     print("Received request:", request.json)
@@ -100,16 +111,6 @@ def story():
     return jsonify({
         'response': ai_response,
         'history': []
-    })
-
-@app.route('/', methods=['GET'])
-def root():
-    return jsonify({
-        "message": "Interactive Fiction API is running",
-        "endpoints": {
-            "health": "/health",
-            "story": "/api/story"
-        }
     })
 
 if __name__ == '__main__':
