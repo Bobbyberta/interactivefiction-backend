@@ -4,7 +4,13 @@ import requests
 import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:*", "file:///*", "null"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 def generate_story_response(player_input):
     try:
@@ -54,11 +60,13 @@ def index():
 
 @app.route('/api/story', methods=['POST'])
 def story():
+    print("Received request:", request.json)
     data = request.json
     player_input = data.get('input', '')
     
     # Optimize initial prompt
     if player_input.lower() == 'start game':
+        print("Starting new game")
         return jsonify({
             'response': "You stand before a dark cave. A torch flickers nearby. What do you do?",
             'history': []
@@ -66,9 +74,11 @@ def story():
     
     # Simplify player input if too long
     player_input = ' '.join(player_input.split()[:10])  # Limit to 10 words
+    print("Processing input:", player_input)
     
     # Generate response
     ai_response = generate_story_response(player_input)
+    print("AI response:", ai_response)
     
     return jsonify({
         'response': ai_response,
@@ -77,4 +87,5 @@ def story():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port=port) 
+    print(f"Starting server on port {port}")
+    app.run(host='0.0.0.0', port=port, debug=True)  # Enable debug mode 
