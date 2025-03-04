@@ -3,7 +3,8 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
-from story_prompts import get_default_response, get_start_game_prompt, get_story_context
+from story_prompts import get_default_response, get_start_game_prompt, get_story_context, get_first_hint
+from story_structure import StoryStructure
 
 # Load environment variables
 load_dotenv()
@@ -16,6 +17,9 @@ CORS(app)
 HF_TOKEN = os.environ.get('HUGGINGFACE_TOKEN')
 hf_client = InferenceClient(token=HF_TOKEN) if HF_TOKEN else None
 
+# Initialize story structure
+story_structure = StoryStructure(hf_client)
+
 @app.route('/health')
 def health_check():
     return jsonify({
@@ -26,7 +30,7 @@ def health_check():
 @app.route('/')
 def root():
     return jsonify({
-        "message": "AI Dungeon Master API",
+        "message": "Interactive Story API",
         "endpoints": {
             "health": "/health",
             "story": "/api/story"
@@ -39,10 +43,17 @@ def generate_story_response(player_input: str) -> str:
         if not hf_client:
             return get_default_response()
 
-        # Get AI context from story prompts
+        # Update story progress based on player input
+        story_structure.update_progress(player_input)
+        
+        # Get current story context with full story structure
         context = get_story_context(
-            session.get('game_state', 'Starting adventure'),
-            player_input
+            story_structure.get_story_context(),
+            player_input,
+            {
+                "problem": vars(story_structure.problem),
+                "solution": vars(story_structure.solution)
+            }
         )
 
         response = hf_client.text_generation(
@@ -64,16 +75,64 @@ def story():
     player_input = data.get('input', '')
 
     if player_input.lower() == 'start game':
-        session['game_state'] = 'beginning'
+        # Generate new story elements
+        story_structure.generate_story_elements()
+        
+        # Get setting info for start prompt
+        setting_info = {
+            "location": story_structure.setting.location,
+            "description": story_structure.setting.description,
+            "atmosphere": story_structure.setting.atmosphere
+        }
+        
+        # Get story structure info
+        story_info = {
+            "problem": vars(story_structure.problem),
+            "solution": vars(story_structure.solution)
+        }
+        
         return jsonify({
-            'response': get_start_game_prompt()
+            'response': get_start_game_prompt(setting_info, story_info),
+            'story_info': {
+                'setting': setting_info,
+                'characters': {name: char.description for name, char in story_structure.characters.items()},
+                'progress': story_structure.state.progress_percentage,
+                'initial_hint': get_first_hint()
+            }
         })
 
     # Generate response based on player input
     ai_response = generate_story_response(player_input)
     
     return jsonify({
-        'response': ai_response
+        'response': ai_response,
+        'progress': {
+            'stage': story_structure.state.current_progress.value,
+            'percentage': story_structure.state.progress_percentage,
+            'discoveries': story_structure.state.discovered_clues,
+            'actions': story_structure.state.completed_actions
+        }
+    })
+
+@app.route('/api/story/debug', methods=['GET'])
+def story_debug():
+    """Get current story state for debugging"""
+    if not app.debug:
+        return jsonify({"error": "Debug endpoint only available in debug mode"}), 403
+        
+    return jsonify({
+        'story_structure': {
+            'setting': vars(story_structure.setting),
+            'characters': {name: vars(char) for name, char in story_structure.characters.items()},
+            'problem': vars(story_structure.problem),
+            'solution': vars(story_structure.solution)
+        },
+        'current_state': {
+            'progress': story_structure.state.current_progress.value,
+            'percentage': story_structure.state.progress_percentage,
+            'discoveries': story_structure.state.discovered_clues,
+            'actions': story_structure.state.completed_actions
+        }
     })
 
 def find_free_port(start_port: int, max_tries: int = 5) -> int:
