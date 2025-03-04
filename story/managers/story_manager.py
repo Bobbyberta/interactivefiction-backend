@@ -6,7 +6,7 @@ from .world_manager import WorldManager
 from ..utils.story_prompts import generate_story_prompt, get_opening_prompt, get_story_elements_prompt
 from random import choice
 import json
-from ..models.story_elements import StoryElements
+from ..models.story_elements import StoryElements, StageStructure, StageGoal
 
 class StoryManager:
     def __init__(self):
@@ -290,7 +290,61 @@ Response:"""
                 "The Elder's Tome",
                 "Crystal of Seeing",
                 "Runestone of Sealing"
-            ]
+            ],
+            stage_structure={
+                "ORDINARY_WORLD": StageStructure(
+                    goals=[
+                        StageGoal(
+                            description="Discover the mysterious message",
+                            required_actions={"read letter"},
+                            optional_actions={"investigate markings", "examine seal"},
+                            knowledge_required={"letter exists"},
+                            completed=False
+                        ),
+                        StageGoal(
+                            description="Seek guidance about the warning",
+                            required_actions={"talk to miriam"},
+                            optional_actions={"ask about prophecy", "discuss threat"},
+                            knowledge_required={"dark warning"},
+                            completed=False
+                        )
+                    ],
+                    theme="Peace disrupted by mystery",
+                    key_events=[
+                        "Letter arrival",
+                        "Strange markings discovered",
+                        "Elder's concern"
+                    ],
+                    locations=["village_square", "elder_cottage", "sacred_grove"],
+                    characters=["Miriam", "Village Elder"]
+                ),
+                "CALL_TO_ADVENTURE": StageStructure(
+                    goals=[
+                        StageGoal(
+                            description="Learn about the prophecy",
+                            required_actions={"discuss prophecy"},
+                            optional_actions={"research history", "examine artifacts"},
+                            knowledge_required={"ancient threat"},
+                            completed=False
+                        ),
+                        StageGoal(
+                            description="Accept the call",
+                            required_actions={"agree to help", "accept quest"},
+                            optional_actions={"prepare supplies", "gather information"},
+                            knowledge_required={"quest importance"},
+                            completed=False
+                        )
+                    ],
+                    theme="Discovery of destiny",
+                    key_events=[
+                        "Prophecy revealed",
+                        "Ancient threat discovered",
+                        "Hero's decision"
+                    ],
+                    locations=["elder_cottage", "sacred_grove", "village_archives"],
+                    characters=["Miriam", "Village Scholar"]
+                )
+            }
         )
 
     def generate_opening_scene(self) -> str:

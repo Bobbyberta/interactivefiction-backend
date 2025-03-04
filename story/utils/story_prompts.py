@@ -51,21 +51,37 @@ Example format:
 
 def get_story_elements_prompt() -> str:
     """Generate prompt for creating consistent story elements"""
-    return """System: Create a cohesive set of fantasy story elements that will be used throughout the adventure.
+    return """System: Create a cohesive set of fantasy story elements including stage goals.
 
 Generate unique elements following this structure:
 - Village name: [Evocative fantasy village name]
-- Village features: [3 unique features that make this village special]
-- Mentor character: [Name and title of the village elder/mentor]
-- Ancient threat: [The dormant danger that's awakening]
-- Magical elements: [3 mystical aspects relevant to the story]
-- Key locations: [3 important places and their brief descriptions]
-- Prophecy: [A cryptic prediction related to the threat]
-- Artifacts: [2-3 magical items that might become important]
+- Village features: [3 unique features]
+- Mentor character: [Name and title]
+- Ancient threat: [The dormant danger]
+- Magical elements: [3 mystical aspects]
+- Key locations: [3 important places]
+- Prophecy: [Cryptic prediction]
+- Artifacts: [2-3 magical items]
 
-Make all elements feel connected and consistent with each other.
-Keep the tone suitable for a fantasy RPG adventure.
-Ensure elements can be gradually revealed through gameplay.
+Then create story structure for each stage:
+
+ORDINARY_WORLD stage:
+- Theme: [Theme of normalcy and hidden mysteries]
+- Goals:
+  1. [First goal description]
+     - Required actions: [2-3 specific actions]
+     - Optional actions: [2-3 additional actions]
+     - Required knowledge: [What player needs to learn]
+  2. [Second goal description with similar structure]
+- Key events: [2-3 potential events]
+- Important locations: [Relevant locations]
+- Key characters: [Characters for this stage]
+
+CALL_TO_ADVENTURE stage:
+[Similar structure for this stage]
+
+MEETING_MENTOR stage:
+[Similar structure for this stage]
 
 Format your response as JSON:
 {
@@ -81,7 +97,26 @@ Format your response as JSON:
         "location3": "description3"
     },
     "prophecy": "prophecy text",
-    "artifacts": ["artifact1", "artifact2", "artifact3"]
+    "artifacts": ["artifact1", "artifact2", "artifact3"],
+    "stage_structure": {
+        "ORDINARY_WORLD": {
+            "theme": "theme",
+            "goals": [
+                {
+                    "description": "goal description",
+                    "required_actions": ["action1", "action2"],
+                    "optional_actions": ["action1", "action2"],
+                    "knowledge_required": ["knowledge1", "knowledge2"]
+                }
+            ],
+            "key_events": ["event1", "event2"],
+            "locations": ["location1", "location2"],
+            "characters": ["character1", "character2"]
+        },
+        ... [other stages] ...
+    }
 }
+
+Make all elements feel connected and ensure goals progress naturally.
 
 Response:""" 
