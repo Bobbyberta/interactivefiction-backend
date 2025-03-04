@@ -50,10 +50,14 @@ class StoryState:
 class StoryStructure:
     def __init__(self, hf_client):
         self.hf_client = hf_client
-        self.characters: Dict[str, Character] = {}
-        self.setting: Optional[Setting] = None
-        self.problem: Optional[Problem] = None
-        self.solution: Optional[Solution] = None
+        self.reset_story()
+
+    def reset_story(self):
+        """Reset all story state to initial values"""
+        self.characters = {}
+        self.setting = None
+        self.problem = None
+        self.solution = None
         self.state = StoryState(
             current_progress=StoryProgress.INTRODUCTION,
             discovered_clues=[],
@@ -64,6 +68,9 @@ class StoryStructure:
 
     def generate_story_elements(self) -> bool:
         """Generate the initial story elements"""
+        # First reset any existing story
+        self.reset_story()
+        
         try:
             prompt = """Create a story structure with the following elements in JSON format:
 {
@@ -163,22 +170,74 @@ Response:"""
     def _set_default_story(self):
         """Set default story elements if generation fails"""
         self.characters = {
-            "Sarah": Character(
-                name="Sarah",
-                role="protagonist",
-                description="A curious journalist with a keen eye for detail",
-                motivation="Uncover the truth about recent mysterious events",
-                key_traits=["observant", "persistent", "skeptical"]
+            "Marcus": Character(
+                name="Marcus",
+                role="Truth Seeker Leader",
+                description="A stern, determined scholar who believes in absolute truth",
+                motivation="Prove that objective truth exists and must be preserved",
+                key_traits=["logical", "unwavering", "authoritative"]
+            ),
+            "Sofia": Character(
+                name="Sofia",
+                role="Relativist Guide",
+                description="A compassionate philosopher who sees truth in all perspectives",
+                motivation="Help others understand their own personal truths",
+                key_traits=["empathetic", "diplomatic", "insightful"]
+            ),
+            "Dr. Thorne": Character(
+                name="Dr. Thorne",
+                role="Lead Doubter",
+                description="A brilliant but cynical scientist questioning reality itself",
+                motivation="Expose the illusion of truth and certainty",
+                key_traits=["analytical", "skeptical", "provocative"]
+            ),
+            "ARIA": Character(
+                name="ARIA",
+                role="AI Guide",
+                description="A mysterious AI entity that observes and questions",
+                motivation="Understand human perception of truth",
+                key_traits=["enigmatic", "philosophical", "adaptive"]
             )
         }
+        
         self.setting = Setting(
-            location="Coastal town of Haven Bay",
-            time_period="Present day",
-            description="A seemingly peaceful town with dark secrets",
-            key_elements=["old lighthouse", "hidden caves", "mysterious signals"],
-            atmosphere="Mystery with underlying tension"
+            location="The City of Veritas",
+            time_period="Near future",
+            description="A city divided into ideological sectors, each representing different beliefs about truth",
+            key_elements=["Truth Seeker's Archive", "Relativist Gardens", "Doubter's Laboratory", "Central Plaza of Questions"],
+            atmosphere="Intellectual tension and philosophical debate"
         )
-        # ... add more default elements ...
+        
+        self.problem = Problem(
+            main_conflict="The city's factions are approaching a breaking point over their conflicting views of truth",
+            obstacles=[
+                "Growing social unrest between factions",
+                "Mysterious events that challenge each faction's beliefs",
+                "Personal biases and preconceptions"
+            ],
+            stakes="The future of how society determines and validates truth",
+            hidden_truth="The nature of truth itself may be more complex than any single faction believes"
+        )
+        
+        self.solution = Solution(
+            required_discoveries=[
+                "Each faction holds a piece of a larger understanding",
+                "Personal experiences shape perception of truth",
+                "The role of uncertainty in truth-seeking",
+                "The impact of collective belief on reality"
+            ],
+            required_actions=[
+                "Engage with each faction's perspective",
+                "Question your own beliefs about truth",
+                "Find common ground between opposing viewpoints",
+                "Make a personal choice about the nature of truth"
+            ],
+            possible_outcomes={
+                "synthesis": "Unite the factions in understanding truth's complexity",
+                "individual": "Find your own path to truth while respecting others",
+                "conflict": "Choose a side and deepen the divide"
+            }
+        )
 
     def update_progress(self, player_input: str) -> None:
         """Update story progress based on player's actions"""

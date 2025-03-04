@@ -46,7 +46,7 @@ def generate_story_response(player_input: str) -> str:
         # Update story progress based on player input
         story_structure.update_progress(player_input)
         
-        # Get current story context with full story structure
+        # Get current story context
         context = get_story_context(
             story_structure.get_story_context(),
             player_input,
@@ -56,10 +56,14 @@ def generate_story_response(player_input: str) -> str:
             }
         )
 
+        # Add philosophical guidance to the prompt
+        context += "\nFocus on philosophical implications and different perspectives on truth. " \
+                  "Challenge the player's assumptions while remaining engaging and thought-provoking."
+
         response = hf_client.text_generation(
             context,
             model="HuggingFaceH4/zephyr-7b-beta",
-            max_new_tokens=150,
+            max_new_tokens=200,  # Increased for more philosophical depth
             temperature=0.7,
             stop_sequences=["Player:", "Response:", "\n\n"]
         )
@@ -75,6 +79,9 @@ def story():
     player_input = data.get('input', '')
 
     if player_input.lower() == 'start game':
+        # Reset story state before generating new elements
+        story_structure.reset_story()
+        
         # Generate new story elements
         story_structure.generate_story_elements()
         

@@ -5,19 +5,26 @@ def get_default_response() -> str:
 
 def get_start_game_prompt(setting: Dict, story_structure: Dict) -> str:
     """Generate dynamic opening based on the story structure"""
-    main_conflict = story_structure["problem"]["main_conflict"]
-    hidden_truth = story_structure["problem"]["hidden_truth"]
-    first_discovery = story_structure["solution"]["required_discoveries"][0]
-    
-    return f"""You find yourself in {setting['location']}, {setting['description']}.
-The atmosphere is {setting['atmosphere']}.
-Something feels different today - {main_conflict.lower()}, though few have noticed yet.
+    return f"""Welcome to {setting['location']}, a city where reality itself is contested.
 
-You can: investigate the unusual atmosphere or continue with your daily routine"""
+You stand at the entrance to a metropolis unlike any other. Before you, the city stretches out in distinct sectors, each controlled by different philosophical factions. In the distance, you see:
+
+- The gleaming Truth Seeker's Archive, where absolute truth is pursued with unwavering dedication
+- The organic Relativist Gardens, where multiple truths flourish side by side
+- The stark Doubter's Laboratory, where reality itself is questioned
+- The bustling Central Plaza, where all paths intersect
+
+The air is thick with intellectual tension as citizens debate the nature of truth itself. Today, you must begin your journey to understand what truth means in this divided world.
+
+You can: 
+- Approach the Truth Seekers' Archive to learn about objective truth
+- Visit the Relativist Gardens to explore multiple perspectives
+- Head to the Doubter's Laboratory to question everything
+- Observe the debates in the Central Plaza"""
 
 def get_first_hint() -> str:
     """Get a subtle hint about the story's hidden truth"""
-    return "You sense there's more to this situation than meets the eye."
+    return "Perhaps understanding truth requires more than choosing a single perspective..."
 
 def get_story_context(story_context: Dict, player_input: str, story_structure: Dict) -> str:
     """Generate context-aware prompt for the AI"""
@@ -33,7 +40,7 @@ def get_story_context(story_context: Dict, player_input: str, story_structure: D
     needed_discoveries = story_structure["solution"]["required_discoveries"]
     needed_actions = story_structure["solution"]["required_actions"]
     
-    return f"""You are narrating a story with a specific plot and goals. Stay focused on the main story elements:
+    return f"""You are guiding a player through a philosophical journey about the nature of truth. Stay focused on these elements:
 
 Core Story Elements:
 - Main Conflict: {main_conflict}
@@ -41,27 +48,27 @@ Core Story Elements:
 - Stakes: {stakes}
 
 Current Story State:
-- Setting: {setting}
-- Progress Stage: {progress} ({story_context['progress_percentage']}% complete)
-- Discovered so far: {discoveries}
-- Completed actions: {actions}
+- Location: {setting}
+- Progress: {progress} ({story_context['progress_percentage']}% complete)
+- Insights gained: {discoveries}
+- Key decisions: {actions}
 
 Story Goals Not Yet Achieved:
-- Discoveries needed: {', '.join(d for d in needed_discoveries if d not in story_context['discovered_clues'])}
+- Insights needed: {', '.join(d for d in needed_discoveries if d not in story_context['discovered_clues'])}
 - Actions needed: {', '.join(a for a in needed_actions if a not in story_context['completed_actions'])}
 
 Player's latest action: {player_input}
 
 IMPORTANT GUIDELINES:
-1. Every response must relate to the main conflict or hidden truth
-2. Guide player toward undiscovered elements and needed actions
-3. Keep all events and descriptions consistent with the core story
-4. Don't introduce new conflicts or plot elements
-5. Maintain focus on resolving the main story goals
+1. Each response should challenge the player's understanding of truth
+2. Present multiple perspectives when appropriate
+3. Encourage critical thinking and self-reflection
+4. Maintain philosophical depth while remaining accessible
+5. Allow player agency in forming their own conclusions
 
 Format your response as:
-[Brief description that advances the main plot]
-You can: [Choice that leads toward a needed discovery/action] or [Alternative choice that explores a different story goal]
+[Philosophical observation or event]
+You can: [Choice that explores one perspective] or [Choice that considers another view]
 
 Response:"""
 
